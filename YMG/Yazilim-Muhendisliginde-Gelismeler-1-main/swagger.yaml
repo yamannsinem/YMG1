@@ -1,0 +1,143 @@
+openapi: 3.0.0
+info:
+  title: Velora API
+  description: Velora Mobil Uygulaması Backend API Dokümantasyonu
+  version: 1.0.0
+
+servers:
+  - url: http://127.0.0.1:8000
+
+tags:
+  - name: Authentication
+  - name: Tasks
+  - name: Passwords
+  - name: Reminders
+
+paths:
+
+  /auth/register:
+    post:
+      tags: [Authentication]
+      summary: Velora kullanıcı kaydı
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email: {type: string}
+                password: {type: string}
+                full_name: {type: string}
+      responses:
+        '201': {description: Kayıt başarılı}
+
+  /auth/login:
+    post:
+      tags: [Authentication]
+      summary: Giriş yap
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email: {type: string}
+                password: {type: string}
+      responses:
+        '200': {description: Giriş başarılı}
+
+  /api/tasks/{user_id}:
+    get:
+      tags: [Tasks]
+      summary: Kullanıcı görevlerini listele
+      parameters:
+        - name: user_id
+          in: path
+          required: true
+          schema: {type: string}
+      responses:
+        '200': {description: Başarılı}
+
+    post:
+      tags: [Tasks]
+      summary: Yeni görev ekle
+      parameters:
+        - name: user_id
+          in: path
+          required: true
+          schema: {type: string}
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title: {type: string}
+                description: {type: string}
+      responses:
+        '200': {description: Görev eklendi}
+
+  /api/passwords/{user_id}:
+    get:
+      tags: [Passwords]
+      summary: Kullanıcının kayıtlı şifrelerini getir
+      parameters:
+        - name: user_id
+          in: path
+          required: true
+          schema: {type: string}
+      responses:
+        '200': {description: Başarılı}
+
+    post:
+      tags: [Passwords]
+      summary: Yeni şifre ekle
+      parameters:
+        - name: user_id
+          in: path
+          required: true
+          schema: {type: string}
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                account: {type: string}
+                username: {type: string}
+                password: {type: string}
+      responses:
+        '200': {description: Şifre kaydedildi}
+
+  /api/reminders/{user_id}:
+    get:
+      tags: [Reminders]
+      summary: Kullanıcı hatırlatıcılarını getir
+      parameters:
+        - name: user_id
+          in: path
+          required: true
+          schema: {type: string}
+      responses:
+        '200': {description: Başarılı}
+
+    post:
+      tags: [Reminders]
+      summary: Yeni hatırlatıcı ekle
+      parameters:
+        - name: user_id
+          in: path
+          required: true
+          schema: {type: string}
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                note: {type: string}
+                time: {type: string}
+      responses:
+        '200': {description: Hatırlatıcı eklendi}

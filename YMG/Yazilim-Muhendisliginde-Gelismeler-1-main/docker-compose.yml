@@ -1,0 +1,86 @@
+version: '3.8'
+
+services:
+  # 1. VERİTABANI (Sağlık kontrolü eklendi)
+  velora_db:
+    image: postgres:15
+    container_name: velora-db
+    environment:
+      - POSTGRES_USER=velora
+      - POSTGRES_PASSWORD=velorapass
+      - POSTGRES_DB=veloradb
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U velora -d veloradb"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # 2. BACKEND API (Güvenlik ve bekleme ayarları eklendi)
+  velora_api:
+    build: .
+    container_name: velora-api
+    ports:
+      - "8000:8000"
+    volumes:
+      - .:/app
+    environment:
+      - DATABASE_URL=postgresql://velora:velorapass@velora_db/veloradb
+      - SECRET_KEY=cok_gizli_anahtar_degistirmeyi_unutma
+    command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+    depends_on:
+      velora_db:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # 3. FRONTEND
+  velora_frontend:
+    image: nginx:alpine
+    container_name: velora-frontend
+    ports:
+      - "80:80"
+    volumes:
+      - ./index.html:/usr/share/nginx/html/index.html
+    depends_on:
+      - velora_api
+
+  # 4. MCP SERVER
+  mcp_server:
+    build: .
+    container_name: velora-mcp-server
+    command: python mcp_server.py
+    volumes:
+      - .:/app
+    depends_on:
+      - velora_api
+    restart: always
+
+  # 5. OLLAMA (Yapay Zeka Motoru - EKLENDİ)
+  ollama:
+    image: ollama/ollama:latest
+    container_name: ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    restart: unless-stopped
+
+  # 6. VELORA AGENT (Günlük Rapor Asistanı - EKLENDİ)
+  velora_agent:
+    build: .
+    container_name: velora-agent
+    command: python velora_agent.py
+    volumes:
+      - .:/app
+    environment:
+      - OLLAMA_HOST=http://ollama:11434
+    depends_on:
+      - velora_api
+      - ollama
+    restart: always
+
+volumes:
+  postgres_data:
+  ollama_data:

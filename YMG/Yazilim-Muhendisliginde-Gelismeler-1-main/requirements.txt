@@ -1,0 +1,12 @@
+fastapi
+pydantic
+uvicorn
+sqlalchemy
+psycopg2-binary
+requests
+prometheus_client
+mcp
+ollama
+# Güvenlik için eklenenler:
+passlib[bcrypt]
+python-jose[cryptography]

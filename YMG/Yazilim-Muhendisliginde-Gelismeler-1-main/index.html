@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Velora OS</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
+<link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+<script>
+    tailwind.config = {
+        theme: {
+            extend: {
+                fontFamily: { sans: ['"Plus Jakarta Sans"', 'sans-serif'] },
+                colors: { brand: { 500: '#8b5cf6', 600: '#7c3aed' } }
+            }
+        }
+    }
+</script>
+
+<style>
+    body { background-color: #0f172a; color: #fff; overflow-x: hidden; }
+    .glass { background: rgba(30, 41, 59, 0.6); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.1); }
+    .glass:hover { border-color: rgba(255, 255, 255, 0.2); transform: translateY(-2px); transition: 0.2s; }
+    .nav-active { background: rgba(139, 92, 246, 0.15); border-left: 3px solid #8b5cf6; color: #fff; }
+    .task-done { text-decoration: line-through; color: #64748b; }
+    .task-done .check-btn { background: #8b5cf6; border-color: #8b5cf6; color: white; }
+    ::-webkit-scrollbar { width: 6px; background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
+</style>
+</head>
+<body class="font-sans antialiased min-h-screen flex flex-col md:flex-row">
+
+    <div class="fixed inset-0 -z-10 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-slate-900 via-[#0f172a] to-black"></div>
+
+    <div id="toast" class="fixed top-5 right-5 z-50 transform translate-x-full transition-transform duration-300">
+        <div class="glass px-4 py-3 rounded-xl flex items-center gap-3 border-l-4 border-brand-500 shadow-xl bg-slate-900">
+            <i class="ri-information-fill text-brand-500 text-xl"></i>
+            <span id="toast-msg" class="text-sm font-medium">Bildirim</span>
+        </div>
+    </div>
+
+    <div id="auth-screen" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#0f172a]">
+        <div class="glass w-full max-w-sm p-8 rounded-3xl text-center">
+            <div class="w-16 h-16 mx-auto bg-gradient-to-tr from-brand-500 to-blue-600 rounded-xl flex items-center justify-center text-3xl font-bold text-white shadow-lg mb-6 shadow-brand-500/30">V</div>
+            <h1 class="text-2xl font-bold mb-1">Velora OS</h1>
+            <p class="text-slate-400 text-sm mb-6">Kişisel Dijital Asistan</p>
+
+            <div id="login-form" class="space-y-3">
+                <input id="l-email" type="email" placeholder="E-Posta" class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 outline-none focus:border-brand-500 transition">
+                <input id="l-pass" type="password" placeholder="Şifre" class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 outline-none focus:border-brand-500 transition">
+                <button onclick="login()" class="w-full bg-brand-600 hover:bg-brand-500 py-3 rounded-xl font-bold transition">Giriş Yap</button>
+                <p class="text-xs text-slate-500 mt-4 cursor-pointer hover:text-white" onclick="toggleAuth('reg')">Hesap Oluştur</p>
+            </div>
+
+            <div id="reg-form" class="space-y-3 hidden">
+                <input id="r-name" type="text" placeholder="Ad Soyad" class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 outline-none">
+                <input id="r-email" type="email" placeholder="E-Posta" class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 outline-none">
+                <input id="r-pass" type="password" placeholder="Şifre" class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 outline-none">
+                <button onclick="register()" class="w-full bg-emerald-600 hover:bg-emerald-500 py-3 rounded-xl font-bold transition">Kayıt Ol</button>
+                <p class="text-xs text-slate-500 mt-4 cursor-pointer hover:text-white" onclick="toggleAuth('login')">Giriş Yap</p>
+            </div>
+        </div>
+    </div>
+
+    <div id="app-screen" class="hidden w-full h-screen flex flex-col md:flex-row">
+        <aside class="w-full md:w-64 glass border-r-0 md:border-r border-white/5 flex md:flex-col justify-between p-4 z-40 bg-[#0f172a]/90 md:h-full fixed bottom-0 md:relative">
+            <div class="hidden md:flex items-center gap-3 px-2 mb-8">
+                <div class="w-8 h-8 bg-brand-600 rounded-lg flex items-center justify-center font-bold">V</div>
+                <span class="font-bold text-lg">Velora</span>
+            </div>
+            
+            <nav class="flex md:flex-col justify-around md:justify-start gap-1 w-full">
+                <button onclick="nav('home')" class="nav-btn p-3 rounded-xl text-slate-400 hover:text-white flex items-center gap-3 nav-active" id="btn-home">
+                    <i class="ri-home-5-line text-xl"></i> <span class="hidden md:block text-sm font-medium">Genel</span>
+                </button>
+                <button onclick="nav('tasks')" class="nav-btn p-3 rounded-xl text-slate-400 hover:text-white flex items-center gap-3" id="btn-tasks">
+                    <i class="ri-checkbox-circle-line text-xl"></i> <span class="hidden md:block text-sm font-medium">Görevler</span>
+                </button>
+                <button onclick="nav('notes')" class="nav-btn p-3 rounded-xl text-slate-400 hover:text-white flex items-center gap-3" id="btn-notes">
+                    <i class="ri-sticky-note-line text-xl"></i> <span class="hidden md:block text-sm font-medium">Notlar</span>
+                </button>
+                <button onclick="nav('shop')" class="nav-btn p-3 rounded-xl text-slate-400 hover:text-white flex items-center gap-3" id="btn-shop">
+                    <i class="ri-shopping-basket-line text-xl"></i> <span class="hidden md:block text-sm font-medium">Alışveriş</span>
+                </button>
+                <button onclick="nav('pass')" class="nav-btn p-3 rounded-xl text-slate-400 hover:text-white flex items-center gap-3" id="btn-pass">
+                    <i class="ri-lock-2-line text-xl"></i> <span class="hidden md:block text-sm font-medium">Kasa</span>
+                </button>
+            </nav>
+
+            <div class="hidden md:block border-t border-white/10 pt-4">
+                <button onclick="logout()" class="w-full flex items-center gap-2 p-2 text-red-400 hover:bg-white/5 rounded-lg text-sm"><i class="ri-logout-box-line"></i> Çıkış</button>
+            </div>
+        </aside>
+
+        <main class="flex-1 overflow-y-auto p-6 pb-24 md:pb-6 relative">
+            <header class="flex justify-between items-end mb-8">
+                <div>
+                    <h2 class="text-3xl font-bold" id="page-title">Genel Bakış</h2>
+                    <p class="text-slate-400 text-sm" id="user-display">Hoşgeldiniz</p>
+                </div>
+                <div class="flex gap-3">
+                    <button class="w-10 h-10 rounded-full glass flex items-center justify-center hover:bg-white/10"><i class="ri-notification-3-line"></i></button>
+                    <button onclick="logout()" class="md:hidden w-10 h-10 rounded-full glass flex items-center justify-center text-red-400"><i class="ri-logout-box-line"></i></button>
+                </div>
+            </header>
+
+            <div id="view-home" class="view space-y-6">
+                <div class="glass p-8 rounded-3xl bg-gradient-to-r from-violet-900/50 to-blue-900/30 border-l-4 border-brand-500 relative overflow-hidden">
+                    <i class="ri-double-quotes-l text-6xl text-white/5 absolute top-2 left-4"></i>
+                    <p class="text-xl italic font-light relative z-10" id="quote-text">Yükleniyor...</p>
+                    <p class="text-right text-xs font-bold text-brand-400 mt-4 tracking-widest uppercase relative z-10" id="quote-author"></p>
+                </div>
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div class="glass p-5 rounded-2xl"><i class="ri-checkbox-circle-fill text-3xl text-blue-400"></i><h3 class="text-2xl font-bold mt-2" id="stat-tasks">0</h3><p class="text-xs text-slate-400">GÖREV</p></div>
+                    <div class="glass p-5 rounded-2xl"><i class="ri-sticky-note-fill text-3xl text-amber-400"></i><h3 class="text-2xl font-bold mt-2" id="stat-notes">0</h3><p class="text-xs text-slate-400">NOT</p></div>
+                    <div class="glass p-5 rounded-2xl"><i class="ri-shopping-cart-fill text-3xl text-pink-400"></i><h3 class="text-2xl font-bold mt-2" id="stat-shop">0</h3><p class="text-xs text-slate-400">SEPET</p></div>
+                    <div class="glass p-5 rounded-2xl"><i class="ri-lock-fill text-3xl text-emerald-400"></i><h3 class="text-2xl font-bold mt-2" id="stat-pass">0</h3><p class="text-xs text-slate-400">ŞİFRE</p></div>
+                </div>
+            </div>
+
+            <div id="view-tasks" class="view hidden space-y-4">
+                <div class="glass p-2 rounded-2xl flex gap-2">
+                    <input id="inp-task" type="text" placeholder="Görev ekle..." class="bg-transparent flex-1 px-4 outline-none">
+                    <button onclick="addTask()" class="bg-brand-600 px-6 py-2 rounded-xl font-bold hover:bg-brand-500">Ekle</button>
+                </div>
+                <div id="list-tasks" class="space-y-2"></div>
+            </div>
+
+            <div id="view-notes" class="view hidden space-y-6">
+                <div class="glass p-4 rounded-3xl">
+                    <input id="inp-note-title" placeholder="Not Başlığı..." class="bg-transparent w-full text-xl font-bold outline-none mb-3 text-white placeholder-slate-500 border-b border-white/10 pb-2">
+                    <textarea id="inp-note-content" placeholder="Notunuzu buraya yazın..." class="bg-transparent w-full h-32 outline-none text-slate-200 resize-none placeholder-slate-500 leading-relaxed"></textarea>
+                    <div class="flex justify-between items-center mt-2 pt-2 border-t border-white/10">
+                        <div class="flex gap-2">
+                            <button onclick="selectColor('#f59e0b')" class="w-6 h-6 rounded-full bg-amber-500 border-2 border-transparent hover:border-white"></button>
+                            <button onclick="selectColor('#ec4899')" class="w-6 h-6 rounded-full bg-pink-500 border-2 border-transparent hover:border-white"></button>
+                            <button onclick="selectColor('#3b82f6')" class="w-6 h-6 rounded-full bg-blue-500 border-2 border-transparent hover:border-white"></button>
+                            <button onclick="selectColor('#10b981')" class="w-6 h-6 rounded-full bg-emerald-500 border-2 border-transparent hover:border-white"></button>
+                        </div>
+                        <button onclick="addNote()" class="bg-white/10 hover:bg-white/20 px-4 py-1.5 rounded-lg text-sm font-bold">Kaydet</button>
+                    </div>
+                </div>
+                <div id="list-notes" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+            </div>
+
+            <div id="view-shop" class="view hidden space-y-4">
+                <div class="glass p-2 rounded-2xl flex gap-2">
+                    <input id="inp-shop" type="text" placeholder="Ürün..." class="bg-transparent flex-1 px-4 outline-none">
+                    <button onclick="addShop()" class="bg-pink-600 px-6 py-2 rounded-xl font-bold hover:bg-pink-500">Ekle</button>
+                </div>
+                <div id="list-shop" class="space-y-2"></div>
+            </div>
+
+            <div id="view-pass" class="view hidden space-y-4">
+                <div class="glass p-4 rounded-3xl space-y-3 border-l-4 border-emerald-500">
+                    <div class="grid md:grid-cols-2 gap-3">
+                        <input id="p-acc" placeholder="Platform" class="bg-black/20 rounded-lg px-3 py-2 outline-none">
+                        <input id="p-usr" placeholder="Kullanıcı Adı" class="bg-black/20 rounded-lg px-3 py-2 outline-none">
+                    </div>
+                    <div class="flex gap-2">
+                        <input id="p-pwd" placeholder="Şifre" class="bg-black/20 rounded-lg px-3 py-2 outline-none flex-1">
+                        <button onclick="addPass()" class="bg-emerald-600 px-4 rounded-lg font-bold hover:bg-emerald-500">Kaydet</button>
+                    </div>
+                </div>
+                <div id="list-pass" class="grid grid-cols-1 md:grid-cols-3 gap-4"></div>
+            </div>
+
+        </main>
+    </div>
+
+<script>
+    // --- SETTINGS ---
+    const API = "http://localhost:8000";
+    let token = localStorage.getItem('token');
+    let uid = localStorage.getItem('uid');
+    let noteColor = '#f59e0b';
+
+    if(token && uid) init();
+    else document.getElementById('auth-screen').classList.remove('hidden');
+
+    function init() {
+        document.getElementById('auth-screen').classList.add('hidden');
+        document.getElementById('app-screen').classList.remove('hidden');
+        document.getElementById('user-display').innerText = localStorage.getItem('name') || 'User';
+        loadAll();
+    }
+
+    async function req(endpoint, method='GET', body=null) {
+        try {
+            const opts = { method, headers: {'Content-Type': 'application/json', 'Authorization': `Bearer ${token}`} };
+            if(body) opts.body = JSON.stringify(body);
+            const res = await fetch(`${API}${endpoint}`, opts);
+            
+            // Auth error -> logout
+            if(res.status === 401 || res.status === 403) {
+                logout(); return null;
+            }
+            // 404 (Not Found) -> Return empty, don't crash
+            if(res.status === 404) return null;
+
+            if(!res.ok) throw new Error('API Error');
+            return await res.json();
+        } catch(e) {
+            console.error(e);
+            return null;
+        }
+    }
+
+    async function loadAll() { loadQuote(); loadTasks(); loadNotes(); loadShop(); loadPass(); }
+
+    // --- LOGIC ---
+    async function loadQuote() {
+        const q = await req('/api/quote') || {quote:"Welcome", author:"Velora"};
+        if(q.quote) {
+            document.getElementById('quote-text').innerText = `"${q.quote}"`;
+            document.getElementById('quote-author').innerText = q.author;
+        }
+    }
+
+    async function loadTasks() {
+        const data = await req(`/api/tasks/${uid}`) || [];
+        document.getElementById('stat-tasks').innerText = data.filter(t => !t.is_completed).length;
+        const list = document.getElementById('list-tasks');
+        list.innerHTML = data.map(t => `
+            <div class="glass p-4 rounded-xl flex items-center gap-4 group ${t.is_completed ? 'task-done opacity-50' : ''}">
+                <button onclick="toggleTask('${t.id}', ${!t.is_completed})" class="w-6 h-6 rounded-full border border-slate-500 flex items-center justify-center hover:border-brand-500"><i class="ri-check-line"></i></button>
+                <span class="flex-1">${t.title}</span>
+                <button onclick="delTask('${t.id}')" class="text-red-400 hover:text-red-300"><i class="ri-delete-bin-line"></i></button>
+            </div>
+        `).join('');
+        new Sortable(list, { animation: 150 });
+    }
+    async function addTask() {
+        const val = document.getElementById('inp-task').value;
+        if(val && await req(`/api/tasks/${uid}`, 'POST', {title: val})) {
+            document.getElementById('inp-task').value=""; loadTasks();
+        }
+    }
+    async function toggleTask(id, s) { await req(`/api/tasks/${uid}/${id}`, 'PUT', {is_completed: s}); loadTasks(); }
+    async function delTask(id) { if(confirm("Sil?")) { await req(`/api/tasks/${uid}/${id}`, 'DELETE'); loadTasks(); } }
+
+    function selectColor(c) { noteColor = c; showToast("Renk Seçildi"); }
+   // --- NOTLAR FONKSİYONLARI ---
+    async function loadNotes() {
+        const data = await req(`/api/notes/${uid}`) || [];
+        document.getElementById('stat-notes').innerText = data.length;
+        
+        const list = document.getElementById('list-notes');
+        
+        if (data.length === 0) {
+            list.innerHTML = '<div class="col-span-full text-center text-slate-500 italic py-10">Henüz hiç notunuz yok. Yukarıdan ekleyebilirsiniz.</div>';
+            return;
+        }
+
+        list.innerHTML = data.map(n => {
+            // Renk kontrolü: Eğer renk yoksa varsayılanı kullan
+            const bgColor = n.color || '#f59e0b'; 
+            return `
+            <div class="p-5 rounded-2xl shadow-lg relative group text-white transition hover:-translate-y-1" style="background-color: ${bgColor}; min-height: 150px;">
+                <h3 class="font-bold text-lg border-b border-white/20 pb-2 mb-2 pr-6">${n.title}</h3>
+                <p class="text-sm opacity-90 whitespace-pre-wrap leading-relaxed">${n.content}</p>
+                <button onclick="delNote('${n.id}')" class="absolute top-3 right-3 bg-black/20 hover:bg-black/40 text-white rounded-full w-8 h-8 flex items-center justify-center transition">
+                    <i class="ri-delete-bin-line"></i>
+                </button>
+            </div>
+            `;
+        }).join('');
+    }
+
+    async function addNote() {
+        const tInput = document.getElementById('inp-note-title');
+        const cInput = document.getElementById('inp-note-content');
+        
+        const t = tInput.value.trim();
+        const c = cInput.value.trim();
+
+        if(!t) { alert("Lütfen notunuza bir başlık girin!"); return; }
+
+        const res = await req(`/api/notes/${uid}`, 'POST', {title: t, content: c, color: noteColor});
+        
+        if(res) {
+            tInput.value = ""; 
+            cInput.value = "";
+            showToast("Not Eklendi!");
+            loadNotes();
+        }
+    }
+    async function delNote(id) { if(confirm("Sil?")) { await req(`/api/notes/${uid}/${id}`, 'DELETE'); loadNotes(); } }
+
+ // --- ALIŞVERİŞ FONKSİYONLARI ---
+    async function loadShop() {
+        const data = await req(`/api/shopping/${uid}`) || [];
+        document.getElementById('stat-shop').innerText = data.length;
+        
+        const list = document.getElementById('list-shop');
+
+        if (data.length === 0) {
+            list.innerHTML = '<div class="text-center text-slate-500 italic py-4">Sepetiniz boş.</div>';
+            return;
+        }
+
+        list.innerHTML = data.map(i => `
+            <div class="bg-slate-800/80 border border-white/5 px-5 py-4 rounded-xl flex justify-between items-center group hover:bg-slate-700/80 transition mb-2">
+                <span class="text-lg font-medium text-white">${i.item}</span>
+                <button onclick="delShop('${i.id}')" class="text-red-400 hover:text-red-300 bg-white/5 hover:bg-white/10 p-2 rounded-lg transition">
+                    <i class="ri-delete-bin-line"></i>
+                </button>
+            </div>
+        `).join('');
+    }
+
+    async function addShop() {
+        const sInput = document.getElementById('inp-shop');
+        const val = sInput.value.trim();
+        
+        if(!val) { alert("Ürün ismi boş olamaz!"); return; }
+
+        const res = await req(`/api/shopping/${uid}`, 'POST', {item: val});
+        
+        if(res) {
+            sInput.value = "";
+            showToast("Sepete Eklendi!"); 
+            loadShop();
+        }
+    }
+    async function delShop(id) { await req(`/api/shopping/${uid}/${id}`, 'DELETE'); loadShop(); }
+
+    async function loadPass() {
+        const data = await req(`/api/passwords/${uid}`) || [];
+        document.getElementById('stat-pass').innerText = data.length;
+        document.getElementById('list-pass').innerHTML = data.map(p => `
+            <div class="glass p-4 rounded-xl text-sm space-y-2 relative group">
+                <div class="font-bold text-lg">${p.account}</div>
+                <div class="flex justify-between text-slate-300"><span>Kullanıcı:</span> <span>${p.username}</span></div>
+                <div class="flex justify-between text-slate-300 group/pass"><span>Şifre:</span> <span class="blur-sm group-hover/pass:blur-0 cursor-pointer text-emerald-400 font-mono transition">${p.password}</span></div>
+            </div>
+        `).join('');
+    }
+    async function addPass() {
+        const a=document.getElementById('p-acc').value, u=document.getElementById('p-usr').value, p=document.getElementById('p-pwd').value;
+        if(a && p && await req(`/api/passwords/${uid}`, 'POST', {account: a, username: u, password: p})) {
+            document.getElementById('p-acc').value=""; document.getElementById('p-pwd').value=""; loadPass();
+        }
+    }
+
+    // --- UTILS ---
+    function toggleAuth(t) { document.getElementById('login-form').classList.toggle('hidden', t==='reg'); document.getElementById('reg-form').classList.toggle('hidden', t!=='reg'); }
+    function logout() { localStorage.clear(); location.reload(); }
+    function nav(t) { 
+        document.querySelectorAll('.view').forEach(e=>e.classList.add('hidden')); 
+        document.getElementById('view-'+t).classList.remove('hidden'); 
+        document.querySelectorAll('nav button').forEach(b=>b.classList.remove('nav-active', 'text-white'));
+        document.getElementById('btn-'+t).classList.add('nav-active', 'text-white');
+    }
+    function showToast(msg) {
+        const t = document.getElementById('toast');
+        document.getElementById('toast-msg').innerText = msg;
+        t.classList.remove('translate-x-full');
+        setTimeout(() => t.classList.add('translate-x-full'), 3000);
+    }
+
+    async function login() {
+        const e=document.getElementById('l-email').value, p=document.getElementById('l-pass').value;
+        const res = await fetch(`${API}/auth/login`, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({email:e, password:p})});
+        if(res.ok) { const d=await res.json(); localStorage.setItem('token', d.access_token); localStorage.setItem('uid', d.user_id); localStorage.setItem('name', d.full_name); location.reload(); }
+        else alert("Giriş Hatalı");
+    }
+    async function register() {
+        const n=document.getElementById('r-name').value, e=document.getElementById('r-email').value, p=document.getElementById('r-pass').value;
+        const res = await fetch(`${API}/auth/register`, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({full_name:n, email:e, password:p})});
+        if(res.ok) { alert("Kayıt Başarılı"); toggleAuth('login'); } else alert("Hata");
+    }
+</script>
+</body>
+</html>

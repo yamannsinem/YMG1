@@ -1,0 +1,7 @@
+global:
+  scrape_interval: 15s
+
+scrape_configs:
+  - job_name: 'velora-backend'
+    static_configs:
+      - targets: ['velora-api:8000']
